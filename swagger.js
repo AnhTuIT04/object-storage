@@ -7,21 +7,7 @@ const options = {
       title: 'Object Storage API',
       version: '1.0.0',
       description: 'Express.js API for ClawCloud object storage with S3-compatible interface',
-      contact: {
-        name: 'API Support',
-        email: 'support@example.com',
-      },
     },
-    servers: [
-      {
-        url: 'http://localhost:5000',
-        description: 'Development server',
-      },
-      {
-        url: 'http://localhost:5000',
-        description: 'Alternative development server',
-      },
-    ],
     components: {
       schemas: {
         SuccessResponse: {
