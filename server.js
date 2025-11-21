@@ -1,5 +1,7 @@
 const express = require('express');
-const AWS = require('aws-sdk');
+const { S3Client } = require('@aws-sdk/client-s3');
+const { Upload } = require('@aws-sdk/lib-storage');
+const { ListBucketsCommand, ListObjectsV2Command, CreateBucketCommand } = require('@aws-sdk/client-s3');
 const multer = require('multer');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
@@ -10,7 +12,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+    credentials: false
+}));
 app.use(express.json());
 
 // Swagger UI setup
@@ -20,14 +27,15 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     customSiteTitle: "Object Storage API Documentation"
 }));
 
-// Configure AWS SDK for ClawCloud
-const s3 = new AWS.S3({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// Configure AWS SDK v3 for ClawCloud
+const s3Client = new S3Client({
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    },
     region: process.env.AWS_REGION,
     endpoint: process.env.AWS_ENDPOINT,
-    s3ForcePathStyle: process.env.AWS_S3_FORCE_PATH_STYLE === 'true',
-    signatureVersion: 'v4'
+    forcePathStyle: process.env.AWS_S3_FORCE_PATH_STYLE === 'true'
 });
 
 // Configure multer for memory storage
@@ -49,10 +57,20 @@ const uploadToS3 = async (file, bucketName, key) => {
     };
 
     try {
-        const result = await s3.upload(params).promise();
+        const upload = new Upload({
+            client: s3Client,
+            params: params
+        });
+        
+        const result = await upload.done();
+        
+        // Construct the URL manually since SDK v3 doesn't return Location
+        const endpoint = process.env.AWS_ENDPOINT || `https://s3.${process.env.AWS_REGION}.amazonaws.com`;
+        const url = `${endpoint}/${bucketName}/${key}`;
+        
         return {
             success: true,
-            url: result.Location,
+            url: url,
             key: result.Key,
             bucket: result.Bucket
         };
@@ -318,7 +336,8 @@ app.get('/health', (req, res) => {
  */
 app.get('/buckets', async (req, res) => {
     try {
-        const result = await s3.listBuckets().promise();
+        const command = new ListBucketsCommand({});
+        const result = await s3Client.send(command);
         res.json({
             success: true,
             buckets: result.Buckets
@@ -363,7 +382,8 @@ app.get('/buckets', async (req, res) => {
 app.get('/bucket/:bucket/objects', async (req, res) => {
     try {
         const { bucket } = req.params;
-        const result = await s3.listObjectsV2({ Bucket: bucket }).promise();
+        const command = new ListObjectsV2Command({ Bucket: bucket });
+        const result = await s3Client.send(command);
         
         res.json({
             success: true,
@@ -434,7 +454,8 @@ app.post('/bucket/:bucket/create', async (req, res) => {
             }
         };
 
-        await s3.createBucket(params).promise();
+        const command = new CreateBucketCommand(params);
+        await s3Client.send(command);
         
         res.json({
             success: true,
@@ -442,8 +463,8 @@ app.post('/bucket/:bucket/create', async (req, res) => {
             bucket: bucket
         });
     } catch (error) {
-        const statusCode = error.statusCode === 409 ? 409 : 500;
-        const message = error.statusCode === 409 ? 'Bucket already exists' : error.message;
+        const statusCode = error.$metadata?.httpStatusCode === 409 ? 409 : 500;
+        const message = statusCode === 409 ? 'Bucket already exists' : error.message;
         
         res.status(statusCode).json({
             success: false,
