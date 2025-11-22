@@ -138,10 +138,9 @@ app.post('/upload/:bucket/single', upload.single('file'), async (req, res) => {
         }
 
         // Generate unique filename
-        const timestamp = Date.now();
-        const originalName = file.originalname;
-        const key = `${timestamp}-${originalName}`;
-
+        const timestamp = Date.now().toString();
+        const random = Math.random().toString(36).substring(7);
+        const key = `${timestamp}-${random}`;
         const result = await uploadToS3(file, bucket, key);
 
         res.json({
@@ -228,9 +227,9 @@ app.post('/upload/:bucket/multiple', upload.array('files', 10), async (req, res)
         }
 
         const uploadPromises = files.map(async (file) => {
-            const timestamp = Date.now();
+            const timestamp = Date.now().toString();
             const random = Math.random().toString(36).substring(7);
-            const key = `${timestamp}-${random}-${file.originalname}`;
+            const key = `${timestamp}-${random}`;
             
             try {
                 const result = await uploadToS3(file, bucket, key);
