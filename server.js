@@ -147,7 +147,7 @@ app.post('/upload/:bucket/single', upload.single('file'), async (req, res) => {
             success: true,
             message: 'File uploaded successfully',
             data: {
-                filename: originalName,
+                filename: file.originalname,
                 key: result.key,
                 url: result.url,
                 bucket: result.bucket,
