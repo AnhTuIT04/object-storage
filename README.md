@@ -146,6 +146,28 @@ List all available buckets.
 
 List all objects in a specific bucket.
 
+#### Delete One Object in Bucket
+**DELETE** `/bucket/:bucket/object/:key`
+
+Delete one object by key in a specific bucket.
+
+**Example using curl:**
+```bash
+curl -X DELETE \
+  http://localhost:5000/bucket/my-bucket/object/1710000000000-abc123
+```
+
+#### Reset Bucket (Delete All Objects)
+**DELETE** `/bucket/:bucket/reset`
+
+Delete all objects in a specific bucket.
+
+**Example using curl:**
+```bash
+curl -X DELETE \
+  http://localhost:5000/bucket/my-bucket/reset
+```
+
 ## Configuration
 
 The application uses the following environment variables:

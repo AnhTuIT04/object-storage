@@ -1,7 +1,12 @@
 const express = require('express');
 const { S3Client } = require('@aws-sdk/client-s3');
 const { Upload } = require('@aws-sdk/lib-storage');
-const { ListBucketsCommand, ListObjectsV2Command, CreateBucketCommand } = require('@aws-sdk/client-s3');
+const {
+    ListBucketsCommand,
+    ListObjectsV2Command,
+    CreateBucketCommand,
+    DeleteObjectCommand
+} = require('@aws-sdk/client-s3');
 const multer = require('multer');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
@@ -42,7 +47,7 @@ const s3Client = new S3Client({
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
-        fileSize: 10 * 1024 * 1024, // 10MB limit
+        fileSize: 100 * 1024 * 1024, // 10MB limit
     }
 });
 
@@ -388,6 +393,147 @@ app.get('/bucket/:bucket/objects', async (req, res) => {
             success: true,
             bucket: bucket,
             objects: result.Contents || []
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/**
+ * @swagger
+ * /bucket/{bucket}/object/{key}:
+ *   delete:
+ *     summary: Delete a single object in a bucket
+ *     description: Delete one object by its key in the specified bucket
+ *     tags: [Bucket Management]
+ *     parameters:
+ *       - in: path
+ *         name: bucket
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The name of the bucket
+ *         example: my-bucket
+ *       - in: path
+ *         name: key
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The object key to delete
+ *         example: 1710000000000-abc123
+ *     responses:
+ *       200:
+ *         description: Object deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+app.delete('/bucket/:bucket/object/:key', async (req, res) => {
+    try {
+        const { bucket, key } = req.params;
+
+        const command = new DeleteObjectCommand({
+            Bucket: bucket,
+            Key: key
+        });
+
+        await s3Client.send(command);
+
+        res.json({
+            success: true,
+            message: 'Object deleted successfully',
+            data: {
+                bucket,
+                key
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/**
+ * @swagger
+ * /bucket/{bucket}/reset:
+ *   delete:
+ *     summary: Reset a bucket
+ *     description: Delete all objects in the specified bucket
+ *     tags: [Bucket Management]
+ *     parameters:
+ *       - in: path
+ *         name: bucket
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The name of the bucket to reset
+ *         example: my-bucket
+ *     responses:
+ *       200:
+ *         description: Bucket reset successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+app.delete('/bucket/:bucket/reset', async (req, res) => {
+    try {
+        const { bucket } = req.params;
+        let continuationToken;
+        let deletedCount = 0;
+
+        // List and delete in batches until the bucket is empty.
+        do {
+            const listCommand = new ListObjectsV2Command({
+                Bucket: bucket,
+                ContinuationToken: continuationToken
+            });
+
+            const listResult = await s3Client.send(listCommand);
+            const objects = listResult.Contents || [];
+
+            if (objects.length > 0) {
+                for (const obj of objects) {
+                    const deleteCommand = new DeleteObjectCommand({
+                        Bucket: bucket,
+                        Key: obj.Key
+                    });
+
+                    await s3Client.send(deleteCommand);
+                    deletedCount += 1;
+                }
+            }
+
+            continuationToken = listResult.IsTruncated
+                ? listResult.NextContinuationToken
+                : undefined;
+        } while (continuationToken);
+
+        res.json({
+            success: true,
+            message: 'Bucket reset successfully',
+            data: {
+                bucket,
+                deletedCount
+            }
         });
     } catch (error) {
         res.status(500).json({
