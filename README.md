@@ -13,23 +13,24 @@ A simple Express.js API for ClawCloud object storage with S3-compatible interfac
 
 ## Installation
 
-1. Install dependencies:
+1. Clone repository:
+```
+git clone https://github.com/AnhTuIT04/object-storage.git
+```
+
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Copy environment configuration:
+3. Copy environment configuration:
 ```bash
 cp .env.example .env
 ```
 
-3. Start the server:
+4. Start the server:
 ```bash
-# Development mode with nodemon
-npm run dev
-
-# Production mode
-npm start
+node server.js
 ```
 
 ## 📚 API Documentation
