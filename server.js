@@ -39,8 +39,7 @@ const s3Client = new S3Client({
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
     },
     region: process.env.AWS_REGION,
-    endpoint: process.env.AWS_ENDPOINT,
-    forcePathStyle: process.env.AWS_S3_FORCE_PATH_STYLE === 'true'
+    endpoint: process.env.AWS_ENDPOINT
 });
 
 // Configure multer for memory storage
@@ -69,9 +68,8 @@ const uploadToS3 = async (file, bucketName, key) => {
         
         const result = await upload.done();
         
-        // Construct the URL manually since SDK v3 doesn't return Location
-        const endpoint = process.env.AWS_ENDPOINT || `https://s3.${process.env.AWS_REGION}.amazonaws.com`;
-        const url = `${endpoint}/${bucketName}/${key}`;
+        // Construct the public URL for the uploaded file
+        const url = `${process.env.OBJECT_ACCESS_URL}/${key}`;
         
         return {
             success: true,
