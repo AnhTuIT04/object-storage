@@ -1,32 +1,35 @@
 {
   "name": "object-storage-api",
   "version": "1.0.0",
-  "description": "Express.js API for ClawCloud object storage with S3-compatible interface",
-  "main": "server.js",
+  "description": "Express.js API for Cloudflare R2 object storage with S3-compatible interface",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "@aws-sdk/client-s3": "^3.678.0",
-    "@aws-sdk/lib-storage": "^3.678.0",
-    "multer": "^1.4.5-lts.1",
-    "dotenv": "^16.3.1",
-    "cors": "^2.8.5",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.0"
+    "express": "^5.2.1",
+    "@aws-sdk/client-s3": "^3.1079.0",
+    "@aws-sdk/lib-storage": "^3.1079.0",
+    "multer": "^2.2.0",
+    "dotenv": "^17.4.2",
+    "cors": "^2.8.6",
+    "swagger-jsdoc": "^6.3.0",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.1.14"
   },
   "keywords": [
     "express",
     "s3",
     "object-storage",
-    "clawcloud",
+    "cloudflare-r2",
     "file-upload"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "overrides": {
+    "glob": "^12.0.0"
+  }
 }
