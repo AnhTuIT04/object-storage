@@ -27,8 +27,6 @@
     "cloudflare-r2",
     "file-upload"
   ],
-  "author": "",
-  "license": "MIT",
   "overrides": {
     "glob": "^12.0.0"
   }

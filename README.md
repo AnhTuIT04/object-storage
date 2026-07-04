@@ -250,7 +250,3 @@ The repo no longer ships a `test.html` route. You can use this snippet locally t
 </body>
 </html>
 ```
-
-## License
-
-MIT
