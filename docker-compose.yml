@@ -1,0 +1,8 @@
+services:
+  object-storage:
+    build: .
+    container_name: object-storage
+    env_file:
+      - path: .env
+        required: false
+    restart: unless-stopped
